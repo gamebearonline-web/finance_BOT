@@ -1,4 +1,4 @@
-name: Post to X - 完全勝利版
+name: Post to X - 2025年11月30日最終勝利版
 
 on:
   push:
@@ -13,124 +13,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install requests
-        run: pip install requests
-
       - name: Post ETF Chart
         if: contains(github.event.head_commit.message, 'ETF')
         env:
-          CK: ${{ secrets.TWITTER_API_KEY }}
-          CS: ${{ secrets.TWITTER_API_SECRET }}
-          AT: ${{ secrets.TWITTER_ACCESS_TOKEN }}
-          AS: ${{ secrets.TWITTER_ACCESS_SECRET }}
-        run: |
-          python3 <<'EOF'
-          import os, time, hmac, hashlib, binascii, subprocess
-          from urllib.parse import quote, urlencode
-          import requests
-
-          ck = os.getenv('CK')
-          cs = os.getenv('CS')
-          at = os.getenv('AT')
-          ats = os.getenv('AS')
-
-          oauth_nonce = binascii.b2a_hex(os.urandom(16)).decode('ascii')
-          oauth_timestamp = str(int(time.time()))
-
-          params = {
-              'oauth_consumer_key': ck,
-              'oauth_nonce': oauth_nonce,
-              'oauth_signature_method': 'HMAC-SHA1',
-              'oauth_timestamp': oauth_timestamp,
-              'oauth_token': at,
-              'oauth_version': '1.0'
-          }
-
-          base_string = '&'.join([
-              'POST',
-              quote('https://api.twitter.com/1.1/statuses/update_with_media.json', safe=''),
-              quote(urlencode(sorted(params.items())), safe='')
-          ])
-
-          signing_key = f"{quote(cs, safe='')}&{quote(ats, safe='')}"
-          signature = binascii.b2a_base64(
-              hmac.new(signing_key.encode(), base_string.encode(), hashlib.sha1).digest()
-          )[:-1].decode('ascii')
-
-          auth_header = f'OAuth oauth_consumer_key="{ck}", oauth_nonce="{oauth_nonce}", oauth_signature="{quote(signature)}", oauth_signature_method="HMAC-SHA1", oauth_timestamp="{oauth_timestamp}", oauth_token="{at}", oauth_version="1.0"'
-
-          # ここだけ修正！ $(date ...) をシェルで実行してから入れる
-          date_str = subprocess.getoutput('date +"%Y/%m/%d（%a）"')
-          text = f"レバレッジETFレポート　{date_str}\n\nRSI（週足）70以上：SOXL TECL TQQQ\nRSI（週足）45以下：TSDD SPXS\n\n#レバレッジETF #米国株"
-
-          files = {'media[]': open('etf_chart.png', 'rb')}
-          data = {'status': text}
-
-          r = requests.post(
-              'https://api.twitter.com/1.1/statuses/update_with_media.json',
-              headers={'Authorization': auth_header},
-              data=data,
-              files=files
-          )
-          print("レスポンスコード:", r.status_code)
-          print(r.text)
-          EOF
+          TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+          TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+          TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          TWITTER_ACCESS_SECRET: ${{ secrets.TWITTER_ACCESS_SECRET }}
+        run: python post_x.py
 
       - name: Post BTC Chart
         if: contains(github.event.head_commit.message, 'BTC')
         env:
-          CK: ${{ secrets.TWITTER_API_KEY }}
-          CS: ${{ secrets.TWITTER_API_SECRET }}
-          AT: ${{ secrets.TWITTER_ACCESS_TOKEN }}
-          AS: ${{ secrets.TWITTER_ACCESS_SECRET }}
-        run: |
-          python3 <<'EOF'
-          import os, time, hmac, hashlib, binascii, subprocess
-          from urllib.parse import quote, urlencode
-          import requests
-
-          ck = os.getenv('CK')
-          cs = os.getenv('CS')
-          at = os.getenv('AT')
-          ats = os.getenv('AS')
-
-          oauth_nonce = binascii.b2a_hex(os.urandom(16)).decode('ascii')
-          oauth_timestamp = str(int(time.time()))
-
-          params = {
-              'oauth_consumer_key': ck,
-              'oauth_nonce': oauth_nonce,
-              'oauth_signature_method': 'HMAC-SHA1',
-              'oauth_timestamp': oauth_timestamp,
-              'oauth_token': at,
-              'oauth_version': '1.0'
-          }
-
-          base_string = '&'.join([
-              'POST',
-              quote('https://api.twitter.com/1.1/statuses/update_with_media.json', safe=''),
-              quote(urlencode(sorted(params.items())), safe='')
-          ])
-
-          signing_key = f"{quote(cs, safe='')}&{quote(ats, safe='')}"
-          signature = binascii.b2a_base64(
-              hmac.new(signing_key.encode(), base_string.encode(), hashlib.sha1).digest()
-          )[:-1].decode('ascii')
-
-          auth_header = f'OAuth oauth_consumer_key="{ck}", oauth_nonce="{oauth_nonce}", oauth_signature="{quote(signature)}", oauth_signature_method="HMAC-SHA1", oauth_timestamp="{oauth_timestamp}", oauth_token="{at}", oauth_version="1.0"'
-
-          date_str = subprocess.getoutput('date +"%Y/%m/%d"')
-          text = f"BTC・取引所・マイニング銘柄レポート　{date_str}\n\nRSI（週足）70以上：MARA RIOT CLSK\nRSI（週足）40以下：該当なし\n\n#Bitcoin #BTC #暗号資産"
-
-          files = {'media[]': open('btc_chart.png', 'rb')}
-          data = {'status': text}
-
-          r = requests.post(
-              'https://api.twitter.com/1.1/statuses/update_with_media.json',
-              headers={'Authorization': auth_header},
-              data=data,
-              files=files
-          )
-          print("レスポンスコード:", r.status_code)
-          print(r.text)
-          EOF
+          TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+          TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+          TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          TWITTER_ACCESS_SECRET: ${{ secrets.TWITTER_ACCESS_SECRET }}
+          IMAGE_PATH: btc_chart.png
+        run: python post_x.py
