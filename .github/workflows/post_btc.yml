@@ -25,6 +25,7 @@ jobs:
       - name: Download BTC image from Drive
         env:
           GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+          GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
         run: |
           python download_from_drive.py \
             --name "btc_rsi_chart.png" \
