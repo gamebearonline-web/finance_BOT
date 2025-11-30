@@ -2,10 +2,6 @@ name: Post BTC Image
 
 on:
   workflow_dispatch:
-    inputs:
-      image_type:
-        required: true
-        type: string
 
 jobs:
   post:
@@ -19,16 +15,16 @@ jobs:
           python-version: "3.11"
 
       - name: Install deps
-        run: pip install -r requirements.txt
+        run: |
+          pip install google-api-python-client google-auth
 
-      - name: Download image from Drive
+      - name: Download BTC image from Drive
         env:
-          GDRIVE_FILE_NAME: "btc_rsi_chart.png"
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
         run: |
           python download_from_drive.py \
-            --name "$GDRIVE_FILE_NAME" \
-            --output "./btc.png"
+            --name "btc_rsi_chart.png" \
+            --output "btc.png"
 
       - name: Post to X
         env:
