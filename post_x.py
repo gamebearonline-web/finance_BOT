@@ -1,8 +1,6 @@
 import os
 import requests
 from requests_oauthlib import OAuth1
-from datetime import datetime
-import pytz
 
 # =====================
 #  環境変数の取得
@@ -11,42 +9,15 @@ API_KEY = os.getenv("TWITTER_API_KEY")
 API_SECRET = os.getenv("TWITTER_API_SECRET")
 ACCESS_TOKEN = os.getenv("TWITTER_ACCESS_TOKEN")
 ACCESS_SECRET = os.getenv("TWITTER_ACCESS_SECRET")
+
 IMAGE_PATH = os.getenv("IMAGE_PATH")
-IMAGE_TYPE = os.getenv("IMAGE_TYPE", "ETF")  # ETF / BTC
+POST_TEXT = os.getenv("POST_TEXT")  # ★ ここが重要（GAS→GitHubから渡す文章）
 
 
 # =====================
-#  認証
+#  認証（OAuth1.0a）
 # =====================
 auth = OAuth1(API_KEY, API_SECRET, ACCESS_TOKEN, ACCESS_SECRET)
-
-
-# =====================
-#  投稿文自動生成
-# =====================
-def generate_text(image_type):
-    jst = pytz.timezone("Asia/Tokyo")
-    now = datetime.now(jst)
-    dt = now.strftime("%Y/%m/%d %H:%M")
-
-    if image_type == "ETF":
-        return f"""【レバレッジETF RSI 🧮】
-更新時刻：{dt}
-
-最新のRSI・市場状況をまとめました。
-くわしくは画像をご覧ください📊
-
-#ETF #レバレッジETF #投資 #RSI
-"""
-    else:  # BTC
-        return f"""【BTC・暗号資産 RSI 📈】
-更新時刻：{dt}
-
-ビットコイン・マイニング関連銘柄の
-RSIレポートです。
-
-#Bitcoin #BTC #暗号資産 #仮想通貨 #RSI
-"""
 
 
 # =====================
@@ -97,14 +68,20 @@ def post_tweet(text, media_id):
 #  メイン処理
 # =====================
 def main():
-    print(f"Starting post_x.py for {IMAGE_TYPE}")
+    print(f"Starting post_x.py")
     print(f"Using image: {IMAGE_PATH}")
 
+    if not IMAGE_PATH:
+        raise Exception("IMAGE_PATH が設定されていません")
+
+    if not POST_TEXT:
+        raise Exception("POST_TEXT（投稿文章）が空です。workflow_dispatch で渡してください。")
+
+    # 画像アップロード
     media_id = upload_media(IMAGE_PATH)
 
-    text = generate_text(IMAGE_TYPE)
-
-    post_tweet(text, media_id)
+    # 投稿
+    post_tweet(POST_TEXT, media_id)
 
     print("✓ Tweet posted successfully")
 
