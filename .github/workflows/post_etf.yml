@@ -25,6 +25,7 @@ jobs:
       - name: Download ETF image from Drive
         env:
           GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+          GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}   # ★ 追加！！
         run: |
           python download_from_drive.py \
             --name "etf_rsi_chart.png" \
@@ -39,4 +40,5 @@ jobs:
 
           IMAGE_PATH: etf.png
           POST_TEXT: ${{ github.event.inputs.post_text }}
-        run: python post_x.py
+        run: |
+          python post_x.py
