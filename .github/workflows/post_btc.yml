@@ -1,0 +1,40 @@
+name: Post BTC Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_type:
+        required: true
+        type: string
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Download image from Drive
+        env:
+          GDRIVE_FILE_NAME: "btc_rsi_chart.png"
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: |
+          python download_from_drive.py \
+            --name "$GDRIVE_FILE_NAME" \
+            --output "./btc.png"
+
+      - name: Post to X
+        env:
+          TWITTER_API_KEY:     ${{ secrets.TWITTER_API_KEY }}
+          TWITTER_API_SECRET:  ${{ secrets.TWITTER_API_SECRET }}
+          TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          TWITTER_ACCESS_SECRET: ${{ secrets.TWITTER_ACCESS_SECRET }}
+          IMAGE_PATH: btc.png
+        run: python post_x.py
