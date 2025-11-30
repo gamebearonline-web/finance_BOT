@@ -20,19 +20,16 @@ jobs:
 
       - name: Install deps
         run: |
-          pip install google-api-python-client google-auth requests Pillow
+          pip install google-api-python-client google-auth requests Pillow requests-oauthlib
 
-      # ⭐ Google Drive から BTC PNG ダウンロード
       - name: Download BTC image from Drive
         env:
           GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
-          GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
         run: |
           python download_from_drive.py \
             --name "btc_rsi_chart.png" \
             --output "btc.png"
 
-      # ⭐ BTC投稿
       - name: Post BTC to X
         env:
           TWITTER_API_KEY:     ${{ secrets.TWITTER_API_KEY }}
@@ -42,5 +39,4 @@ jobs:
 
           IMAGE_PATH: btc.png
           POST_TEXT: ${{ github.event.inputs.post_text }}
-        run: |
-          python post_x.py
+        run: python post_x.py
