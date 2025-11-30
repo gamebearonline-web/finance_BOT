@@ -30,14 +30,33 @@ jobs:
           TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
           TWITTER_ACCESS_SECRET: ${{ secrets.TWITTER_ACCESS_SECRET }}
         run: |
-          python -c "
-import tweepy, os
-auth = tweepy.OAuthHandler(os.getenv('TWITTER_API_KEY'), os.getenv('TWITTER_API_SECRET'))
-auth.set_access_token(os.getenv('TWITTER_ACCESS_TOKEN'), os.getenv('TWITTER_ACCESS_SECRET'))
-api = tweepy.API(auth)
-api.update_with_media('etf_chart.png', status='レバレッジETFレポート $(date +%Y/%m/%d)（$(date +%a | sed "s/Mon/月/;s/Tue/火/;s/Wed/水/;s/Thu/木/;s/Fri/金/;s/Sat/土/;s/Sun/日/")）\n\nRSI（週足）70以上：SOXL TECL TQQQ\nRSI（週足）45以下：TSDD SPXS\n\n#レバレッジETF #米国株')
-print('ETF投稿完了！')
-          "
+          python - <<'PY'
+          import tweepy
+          import os
+          from datetime import datetime
+          import locale
+
+          # 日本語ロケール（日付の曜日を日本語に）
+          try:
+              locale.setlocale(locale.LC_TIME, 'ja_JP.UTF-8')
+          except:
+              pass
+
+          auth = tweepy.OAuthHandler(os.getenv('TWITTER_API_KEY'), os.getenv('TWITTER_API_SECRET'))
+          auth.set_access_token(os.getenv('TWITTER_ACCESS_TOKEN'), os.getenv('TWITTER_ACCESS_SECRET'))
+          api = tweepy.API(auth)
+
+          today = datetime.now().strftime('%Y/%m/%d（%a）')
+          text = f"""レバレッジETFレポート　{today}
+
+RSI（週足）70以上：SOXL TECL TQQQ
+RSI（週足）45以下：TSDD SPXS
+
+#レバレッジETF #米国株"""
+
+          api.update_with_media(filename="etf_chart.png", status=text)
+          print("ETF投稿成功！")
+          PY
 
       - name: Post BTC Chart
         if: contains(github.event.head_commit.message, 'BTC')
@@ -47,11 +66,23 @@ print('ETF投稿完了！')
           TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
           TWITTER_ACCESS_SECRET: ${{ secrets.TWITTER_ACCESS_SECRET }}
         run: |
-          python -c "
-import tweepy, os
-auth = tweepy.OAuthHandler(os.getenv('TWITTER_API_KEY'), os.getenv('TWITTER_API_SECRET'))
-auth.set_access_token(os.getenv('TWITTER_ACCESS_TOKEN'), os.getenv('TWITTER_ACCESS_SECRET'))
-api = tweepy.API(auth)
-api.update_with_media('btc_chart.png', status='BTC・取引所・マイニング銘柄レポート $(date +%Y/%m/%d)\n\nRSI（週足）70以上：MARA RIOT\nRSI（週足）40以下：なし\n\n#Bitcoin #BTC #暗号資産')
-print('BTC投稿完了！')
-          "
+          python - <<'PY'
+          import tweepy
+          import os
+          from datetime import datetime
+
+          auth = tweepy.OAuthHandler(os.getenv('TWITTER_API_KEY'), os.getenv('TWITTER_API_SECRET'))
+          auth.set_access_token(os.getenv('TWITTER_ACCESS_TOKEN'), os.getenv('TWITTER_ACCESS_SECRET'))
+          api = tweepy.API(auth)
+
+          today = datetime.now().strftime('%Y/%m/%d')
+          text = f"""BTC・取引所・マイニング銘柄レポート　{today}
+
+RSI（週足）70以上：MARA RIOT CLSK
+RSI（週足）40以下：該当なし
+
+#Bitcoin #BTC #暗号資産"""
+
+          api.update_with_media(filename="btc_chart.png", status=text)
+          print("BTC投稿成功！")
+          PY
