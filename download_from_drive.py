@@ -7,8 +7,8 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 
-def download_file_from_drive(file_name, output_path, service_account_json):
-  """Google Drive から file_name を検索し、最初の1件を output_path にダウンロード"""
+def download_file_from_drive(file_name, output_path, service_account_json, folder_id):
+  """Google Drive の指定フォルダから file_name を検索しダウンロード"""
 
   creds = service_account.Credentials.from_service_account_info(
       json.loads(service_account_json),
@@ -17,16 +17,18 @@ def download_file_from_drive(file_name, output_path, service_account_json):
 
   service = build("drive", "v3", credentials=creds)
 
-  # ファイル名完全一致で検索
+  # 指定フォルダ内のみ検索
+  query = f"'{folder_id}' in parents and name = '{file_name}' and trashed = false"
+
   results = (
       service.files()
-      .list(q=f"name = '{file_name}'", fields="files(id, name)")
+      .list(q=query, fields="files(id, name)")
       .execute()
       .get("files", [])
   )
 
   if not results:
-    raise Exception(f"Drive に '{file_name}' が見つかりません")
+    raise Exception(f"Drive フォルダ内に '{file_name}' が見つかりません")
 
   file_id = results[0]["id"]
 
@@ -40,6 +42,7 @@ def download_file_from_drive(file_name, output_path, service_account_json):
 
   print(f"✓ Downloaded: {output_path}")
 
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument("--name", required=True, help="Drive file name")
@@ -47,4 +50,6 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   service_account_json = os.environ["GOOGLE_SERVICE_ACCOUNT"]
-  download_file_from_drive(args.name, args.output, service_account_json)
+  folder_id = os.environ["GOOGLE_DRIVE_FOLDER_ID"]
+
+  download_file_from_drive(args.name, args.output, service_account_json, folder_id)
