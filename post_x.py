@@ -1,67 +1,78 @@
-# post_x.py  ← この名前で保存
 import os
-import time
-import hmac
-import hashlib
-import binascii
-import requests
-from urllib.parse import quote
+import tweepy
+import sys
+from datetime import datetime
+import pytz
 
-def post_with_media(status, image_path):
+def main():
+    # GitHub Secrets / 環境変数から取得
     consumer_key = os.getenv("TWITTER_API_KEY")
     consumer_secret = os.getenv("TWITTER_API_SECRET")
     access_token = os.getenv("TWITTER_ACCESS_TOKEN")
     access_token_secret = os.getenv("TWITTER_ACCESS_SECRET")
+    if not all([consumer_key, consumer_secret, access_token, access_token_secret]):
+        print("[ERROR] Twitter API credentials が不足しています")
+        sys.exit(1)
+    
+    # 画像パス（ETF or BTCで切り替え）
+    image_path = os.getenv("IMAGE_PATH", "etf_chart.png")
+    if not os.path.exists(image_path):
+        print(f"[ERROR] 画像ファイルが見つかりません → {image_path}")
+        sys.exit(1)
 
-    oauth_nonce = binascii.b2a_hex(os.urandom(16)).decode()
-    oauth_timestamp = str(int(time.time()))
+    # ===== JST 現在時刻 =====
+    jst = pytz.timezone('Asia/Tokyo')
+    now = datetime.now(jst)
+    date_str = now.strftime("%Y/%m/%d（%a）")
 
-    # ← これが最重要！statusも署名に含める！！
-    params = {
-        "oauth_consumer_key": consumer_key,
-        "oauth_nonce": oauth_nonce,
-        "oauth_signature_method": "HMAC-SHA1",
-        "oauth_timestamp": oauth_timestamp,
-        "oauth_token": access_token,
-        "oauth_version": "1.0",
-        "status": status  # ← ここを追加！これがないと401になる
-    }
+    # ===== 投稿文（ETF or BTCで切り替え） =====
+    chart_type = os.getenv("CHART_TYPE", "ETF")  # ETF or BTC
+    if chart_type == "BTC":
+        tweet_text = f"BTC・取引所・マイニング銘柄レポート　{date_str}\n\nRSI（週足）70以上：MARA RIOT CLSK\nRSI（週足）40以下：該当なし\n\n#Bitcoin #BTC #暗号資産"
+    else:
+        tweet_text = f"レバレッジETFレポート　{date_str}\n\nRSI（週足）70以上：SOXL TECL TQQQ\nRSI（週足）45以下：TSDD SPXS\n\n#レバレッジETF #米国株"
 
-    # 正しい base string 作成
-    base_string = "POST&" + quote("https://api.twitter.com/1.1/statuses/update_with_media.json") + "&" + \
-                  quote("&".join([f"{quote(k)}={quote(v)}" for k, v in sorted(params.items())]))
+    print(f"[INFO] 投稿タイプ: {chart_type}")
+    print(f"[INFO] 投稿文: {tweet_text}")
 
-    signing_key = f"{quote(consumer_secret)}&{quote(access_token_secret)}"
-    oauth_signature = binascii.b2a_base64(
-        hmac.new(signing_key.encode(), base_string.encode(), hashlib.sha1).digest()
-    )[:-1].decode()
+    # ===== v1.1 (画像アップロード) =====
+    try:
+        auth = tweepy.OAuth1UserHandler(
+            consumer_key, consumer_secret,
+            access_token, access_token_secret
+        )
+        api_v1 = tweepy.API(auth)
+        media = api_v1.media_upload(filename=image_path)
+        media_id = str(media.media_id)
+        print(f"[INFO] 画像アップロード成功 → media_id={media_id}")
+    except Exception as e:
+        print("[ERROR] 画像アップロード失敗:", repr(e))
+        sys.exit(1)
 
-    auth_header = (
-        f'OAuth oauth_consumer_key="{consumer_key}", '
-        f'oauth_nonce="{oauth_nonce}", '
-        f'oauth_signature="{quote(oauth_signature)}", '
-        f'oauth_signature_method="HMAC-SHA1", '
-        f'oauth_timestamp="{oauth_timestamp}", '
-        f'oauth_token="{access_token}", '
-        f'oauth_version="1.0"'
-    )
-
-    files = {"media[]": open(image_path, "rb")}
-    data = {"status": status}
-
-    response = requests.post(
-        "https://api.twitter.com/1.1/statuses/update_with_media.json",
-        headers={"Authorization": auth_header},
-        data=data,
-        files=files
-    )
-
-    print("Status:", response.status_code)
-    print("Response:", response.text)
-    return response
+    # ===== v2 (投稿) =====
+    try:
+        client = tweepy.Client(
+            consumer_key=consumer_key,
+            consumer_secret=consumer_secret,
+            access_token=access_token,
+            access_token_secret=access_token_secret
+        )
+        response = client.create_tweet(
+            text=tweet_text,
+            media_ids=[media_id]
+        )
+        tweet_id = response.data["id"]
+        # username の取得（安全に処理）
+        try:
+            user_info = client.get_me()
+            username = user_info.data.username if user_info.data else "unknown_user"
+        except:
+            username = "unknown_user"
+        print(f"[SUCCESS] 投稿完了 → https://x.com/{username}/status/{tweet_id}")
+        print(f"[INFO] 投稿内容:\n{tweet_text}")
+    except Exception as e:
+        print("[ERROR] ツイート投稿失敗:", repr(e))
+        sys.exit(1)
 
 if __name__ == "__main__":
-    image_path = os.getenv("IMAGE_PATH", "etf_chart.png")
-    status = f"レバレッジETFレポート　{time.strftime('%Y/%m/%d（%a）')}\n\nRSI（週足）70以上：SOXL TECL TQQQ\nRS387足）45以下：TSDD SPXS\n\n#レバレッジETF #米国株"
-
-    post_with_media(status, image_path)
+    main()
