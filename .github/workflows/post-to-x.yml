@@ -1,4 +1,4 @@
-name: Post to X (Freeティア最強・確実版)
+name: Post to X (Freeティア最強・最終勝利版)
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install tweepy
-        run: pip install tweepy
+        run: pip install "tweepy<4.0"  # ← ここを3系に固定！
 
       - name: Post ETF Chart
         if: contains(github.event.head_commit.message, 'ETF')
