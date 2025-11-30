@@ -2,11 +2,6 @@ name: Post ETF Image
 
 on:
   workflow_dispatch:
-    inputs:
-      image_type:
-        description: "Type of image"
-        required: true
-        default: "ETF"
 
 jobs:
   post:
@@ -19,19 +14,20 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install deps
+      - name: Install Python dependencies
         run: |
           pip install google-api-python-client google-auth
 
       - name: Download ETF image from Drive
         env:
           GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+          GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
         run: |
           python download_from_drive.py \
             --name "etf_rsi_chart.png" \
             --output "etf.png"
 
-      - name: Post to X
+      - name: Post ETF image to X
         env:
           TWITTER_API_KEY:     ${{ secrets.TWITTER_API_KEY }}
           TWITTER_API_SECRET:  ${{ secrets.TWITTER_API_SECRET }}
