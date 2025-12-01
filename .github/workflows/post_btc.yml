@@ -28,7 +28,7 @@ jobs:
           GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
         run: |
           python download_from_drive.py \
-            --name "btc_rsi_chart.png" \
+            --name "btc_exported_slide.png" \
             --output "btc.png"
 
       - name: Post BTC to X
