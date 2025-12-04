@@ -7,7 +7,7 @@ on:
         description: "Text to post on Bluesky"
         required: true
       image_path:
-        description: "Path to image file"
+        description: "Path to PNG image"
         required: true
 
 jobs:
@@ -21,6 +21,9 @@ jobs:
         run: pip install atproto
 
       - name: Post to Bluesky
+        env:
+          BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
+          BSKY_APP_PASSWORD: ${{ secrets.BSKY_APP_PASSWORD }}
         run: |
           python << 'EOF'
           import os
@@ -32,8 +35,12 @@ jobs:
           client = Client()
           client.login(handle, password)
 
-          text = "${{ github.event.inputs.post_text }}"
+          # ★ 複数行テキストに対応するトリプルクォート
+          text = """${{ github.event.inputs.post_text }}"""
+
           image_path = "${{ github.event.inputs.image_path }}"
+          print("Using image:", image_path)
+          print("Posting text:\n", text)
 
           with open(image_path, "rb") as f:
               img_bytes = f.read()
@@ -44,8 +51,5 @@ jobs:
               image_alt="Market chart"
           )
 
-          print("Posted to Bluesky.")
+          print("✓ Posted to Bluesky!")
           EOF
-        env:
-          BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
-          BSKY_APP_PASSWORD: ${{ secrets.BSKY_APP_PASSWORD }}
