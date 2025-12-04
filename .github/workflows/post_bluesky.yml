@@ -1,0 +1,52 @@
+name: Post Bluesky
+
+on:
+  workflow_dispatch:
+    inputs:
+      post_text:
+        description: "Text to post on Bluesky"
+        required: true
+      image_path:
+        description: "Path to PNG image"
+        required: true
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          pip install atproto
+
+      - name: Post to Bluesky
+        run: |
+          python << 'EOF'
+          from atproto import Client
+          import os
+
+          handle = os.environ["BSKY_HANDLE"]
+          password = os.environ["BSKY_APP_PASSWORD"]
+
+          client = Client()
+          client.login(handle, password)
+
+          text = "${{ github.event.inputs.post_text }}"
+          img_path = "${{ github.event.inputs.image_path }}"
+
+          with open(img_path, "rb") as f:
+              img_bytes = f.read()
+
+          # 画像つき投稿
+          client.send_image(
+              text=text,
+              image=img_bytes,
+              image_alt="ETF/BTC market report"
+          )
+          EOF
+        env:
+          BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
+          BSKY_APP_PASSWORD: ${{ secrets.BSKY_APP_PASSWORD }}
