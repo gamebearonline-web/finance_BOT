@@ -1,3 +1,43 @@
+name: Post to Bluesky
+
+on:
+  workflow_dispatch:
+    inputs:
+      post_text:
+        description: "Text to post on Bluesky"
+        required: true
+      image_file:
+        description: "PNG file name (ex: etf_exported_slide.png)"
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ======================================================
+      # ① Google Drive から PNG をダウンロード
+      # ======================================================
+      - name: Install Drive client
+        run: pip install google-api-python-client google-auth
+
+      - name: Download slide PNG from Google Drive
+        env:
+          GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+          GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+        run: |
+          python download_from_drive.py \
+            --name "${{ github.event.inputs.image_file }}" \
+            --output "slide.png"
+
+      # ======================================================
+      # ② Bluesky 投稿（リトライ付き）
+      # ======================================================
+      - name: Install Bluesky libraries
+        run: pip install atproto httpx
+
       - name: Post to Bluesky
         env:
           BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
@@ -12,41 +52,28 @@
           password = os.environ["BSKY_APP_PASSWORD"]
 
           text = """${{ github.event.inputs.post_text }}"""
-
           image_path = "slide.png"
-          print("Posting image:", image_path)
-          print("Text:\n", text)
 
           with open(image_path, "rb") as f:
               img_bytes = f.read()
 
-          # ===============================
-          # ★ ログイン & 投稿を最大3回リトライ
-          # ===============================
           last_error = None
           for attempt in range(1, 4):
               try:
-                  print(f"[Bluesky] Attempt {attempt}/3: login & post...")
+                  print(f"[Bluesky] Attempt {attempt}/3...")
                   client = Client()
                   client.login(handle, password)
-
                   client.send_image(
                       text=text,
                       image=img_bytes,
                       image_alt="Market chart",
                   )
-
                   print("✓ Posted to Bluesky!")
                   break
-
               except Exception as e:
                   last_error = e
-                  print(f"[Bluesky] Attempt {attempt} failed: {e}")
-                  if attempt < 3:
-                      print("...wait 5 seconds and retry")
-                      time.sleep(5)
-                  else:
-                      print("[Bluesky] All retries failed.")
-                      raise
-
+                  print(f"[Bluesky] Failed: {e}")
+                  time.sleep(5)
+          else:
+              raise last_error
           EOF
