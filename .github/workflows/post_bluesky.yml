@@ -1,3 +1,43 @@
+name: Post to Bluesky
+
+on:
+  workflow_dispatch:
+    inputs:
+      post_text:
+        description: "Text to post on Bluesky"
+        required: true
+      image_file:
+        description: "PNG file name (ex: etf_exported_slide.png)"
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ======================================================
+      # ① Google Drive から PNG をダウンロード
+      # ======================================================
+      - name: Install Drive client
+        run: pip install google-api-python-client google-auth
+
+      - name: Download slide PNG from Google Drive
+        env:
+          GOOGLE_SERVICE_ACCOUNT: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
+          GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
+        run: |
+          python download_from_drive.py \
+            --name "${{ github.event.inputs.image_file }}" \
+            --output "slide.png"
+
+      # ======================================================
+      # ② Bluesky 投稿
+      # ======================================================
+      - name: Install Bluesky library
+        run: pip install atproto httpx
+
       - name: Post to Bluesky
         env:
           BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
