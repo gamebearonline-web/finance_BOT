@@ -1,4 +1,4 @@
-       name: Post to Bluesky
+      - name: Post to Bluesky
         env:
           BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
           BSKY_APP_PASSWORD: ${{ secrets.BSKY_APP_PASSWORD }}
@@ -11,12 +11,13 @@
           handle = os.environ["BSKY_HANDLE"]
           password = os.environ["BSKY_APP_PASSWORD"]
 
-          # ===========================
-          # ★ タイムアウト 60秒＋リトライ3回
-          # ===========================
+          # ===============================
+          # ★ タイムアウト 60秒 + リトライ3回
+          # ===============================
           transport = httpx.HTTPTransport(retries=3)
           session = httpx.Client(timeout=60, transport=transport)
 
+          # ★ atproto.Client に session を注入
           client = Client(session=session)
           client.login(handle, password)
 
@@ -29,10 +30,7 @@
           with open(image_path, "rb") as f:
               img_bytes = f.read()
 
-          # ===========================
-          # ★ 画像送信（タイムアウト強化版）
-          # ===========================
-          resp = client.send_image(
+          client.send_image(
               text=text,
               image=img_bytes,
               image_alt="Market chart"
