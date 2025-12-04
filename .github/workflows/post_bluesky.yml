@@ -33,7 +33,7 @@ jobs:
             --output "slide.png"
 
       # ======================================================
-      # ② Bluesky へ投稿
+      # ② Bluesky へ投稿（★タイムアウト修正済）
       # ======================================================
       - name: Install Bluesky library
         run: pip install atproto
@@ -50,7 +50,8 @@ jobs:
           handle = os.environ["BSKY_HANDLE"]
           password = os.environ["BSKY_APP_PASSWORD"]
 
-          client = Client()
+          # ★ タイムアウト増強（ここが最重要）
+          client = Client(timeout=60)
           client.login(handle, password)
 
           text = """${{ github.event.inputs.post_text }}"""
