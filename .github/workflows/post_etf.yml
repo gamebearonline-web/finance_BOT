@@ -6,6 +6,9 @@ on:
       post_text:
         description: "Text to post with image"
         required: true
+      drive_file_id:
+        description: "Google Drive file ID of latest PNG"
+        required: true
 
 jobs:
   post:
@@ -28,7 +31,7 @@ jobs:
           GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
         run: |
           python download_from_drive.py \
-            --name "etf_exported_slide.png" \
+            --id "${{ github.event.inputs.drive_file_id }}" \
             --output "etf.png"
 
       - name: Post ETF to X
