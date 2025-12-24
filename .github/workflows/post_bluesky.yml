@@ -28,7 +28,7 @@ jobs:
           GOOGLE_DRIVE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_FOLDER_ID }}
         run: |
           python download_from_drive.py \
-            --name "${{ github.event.inputs.image_file }}" \
+            --id "${{ github.event.inputs.drive_file_id }}" \
             --output "slide.png"
 
       # ======================================================
