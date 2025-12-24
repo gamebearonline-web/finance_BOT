@@ -6,8 +6,7 @@ on:
       post_text:
         description: "Text to post on Bluesky"
         required: true
-      image_file:
-        description: "PNG file name (ex: etf_exported_slide.png)"
+      drive_file_id:
         required: true
 
 jobs:
